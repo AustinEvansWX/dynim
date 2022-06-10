@@ -5,20 +5,21 @@
 
 #include <GL/gl.h>
 #include <GL/glext.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_timer.h>
-#include <SDL2/SDL_video.h>
+#include <GLFW/glfw3.h>
+
+static void error_callback(int error, const char *description) {
+  fprintf(stderr, "Error: %s\n", description);
+}
 
 using namespace std;
 
 namespace Dynim {
 
 void Application::Initialize(const int width, const int height) {
-  SDL_Init(SDL_INIT_VIDEO);
-
-  window_ = SDL_CreateWindow("Test", 0, 0, width, height, SDL_WINDOW_OPENGL);
-  SDL_GLContext context = SDL_GL_CreateContext(window_);
+  glfwSetErrorCallback(error_callback);
+  glfwInit();
+  window_ = glfwCreateWindow(width, height, "Dynim", NULL, NULL);
+  glfwMakeContextCurrent(window_);
 
   glViewport(0, 0, width, height);
   glClearColor(0, 0, 0, 1);
@@ -29,8 +30,6 @@ void Application::ImportShader(string vertex_source_path, string fragment_source
 }
 
 void Application::Run() {
-  SDL_bool running = SDL_TRUE;
-
   float triangle[] = {
       0,
       0.5,
@@ -87,17 +86,10 @@ void Application::Run() {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glUseProgram(shader_program_);
 
-  while (running) {
-    float delta_time = GetDeltaTime();
+  glfwSwapInterval(1);
 
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      switch (event.type) {
-      case SDL_QUIT:
-        running = SDL_FALSE;
-        break;
-      }
-    }
+  while (!glfwWindowShouldClose(window_)) {
+    float delta_time = GetDeltaTime();
 
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -105,20 +97,24 @@ void Application::Run() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
     glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
 
-    SDL_GL_SwapWindow(window_);
-    SDL_Delay(20);
+    glfwSwapBuffers(window_);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    glfwPollEvents();
   }
 }
 
 float Application::GetDeltaTime() {
   last_ = now_;
-  now_ = SDL_GetPerformanceCounter();
-  return (now_ - last_) / (float)SDL_GetPerformanceFrequency();
+  now_ = glfwGetTime();
+  return (now_ - last_) / (double)glfwGetTimerFrequency();
 }
 
 Application::~Application() {
-  SDL_DestroyWindow(window_);
-  SDL_Quit();
+  glfwDestroyWindow(window_);
+  glfwTerminate();
 }
 
 } // namespace Dynim
