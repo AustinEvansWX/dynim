@@ -1,6 +1,7 @@
 #define GL_GLEXT_PROTOTYPES
 
 #include "dynim.hpp"
+#include "VertexArray.hpp"
 #include "primitive.hpp"
 #include "shader.hpp"
 
@@ -33,7 +34,27 @@ void Application::ImportShader(string vertex_source_path, string fragment_source
 }
 
 void Application::Run() {
-  Quad triangle;
+  float vertices[] = {
+      0,
+      0.5,
+      0,
+      1,
+
+      -0.5,
+      -0.5,
+      0,
+      1,
+
+      0.5,
+      -0.5,
+      0,
+      1,
+  };
+
+  unsigned int indices[] = {0, 1, 2};
+
+  VertexArray vao(vertices, sizeof(vertices), indices, sizeof(indices) / sizeof(unsigned int));
+  // Quad triangle;
 
   glfwSwapInterval(1);
 
@@ -44,7 +65,10 @@ void Application::Run() {
 
     glUseProgram(shader_program_);
 
-    triangle.Draw();
+    vao.Bind();
+    glDrawElements(GL_TRIANGLES, vao.GetCount(), GL_UNSIGNED_INT, 0);
+
+    //    triangle.Draw();
 
     LoopCleanup();
   }
