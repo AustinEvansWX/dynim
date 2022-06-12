@@ -21,7 +21,8 @@ private:
   double last_ = 0;
   GLuint shader_program_ = 0;
 
-  float GetDeltaTime();
+  double GetDeltaTime();
+  void DisplayFPS(double delta_time);
 };
 
 } // namespace Dynim

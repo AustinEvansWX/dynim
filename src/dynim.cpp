@@ -6,6 +6,8 @@
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <GLFW/glfw3.h>
+#include <iostream>
+#include <string>
 
 static void error_callback(int error, const char *description) {
   fprintf(stderr, "Error: %s\n", description);
@@ -89,8 +91,8 @@ void Application::Run() {
   glfwSwapInterval(1);
 
   while (!glfwWindowShouldClose(window_)) {
-    float delta_time = GetDeltaTime();
-
+    double delta_time = GetDeltaTime();
+    DisplayFPS(delta_time);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
@@ -98,18 +100,22 @@ void Application::Run() {
     glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
 
     glfwSwapBuffers(window_);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
     glfwPollEvents();
   }
 }
 
-float Application::GetDeltaTime() {
+double Application::GetDeltaTime() {
   last_ = now_;
   now_ = glfwGetTime();
-  return (now_ - last_) / (double)glfwGetTimerFrequency();
+  return now_ - last_;
+}
+
+void Application::DisplayFPS(double delta_time) {
+  int fps = 1 / delta_time;
+  const string title = "FPS: " + std::to_string(fps);
+  glfwSetWindowTitle(window_, title.c_str());
 }
 
 Application::~Application() {
