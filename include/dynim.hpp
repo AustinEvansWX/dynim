@@ -22,6 +22,7 @@ private:
   GLuint shader_program_ = 0;
 
   double GetDeltaTime();
+  void LoopCleanup();
   void DisplayFPS(double delta_time);
 };
 

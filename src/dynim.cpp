@@ -86,7 +86,6 @@ void Application::Run() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  glUseProgram(shader_program_);
 
   glfwSwapInterval(1);
 
@@ -95,14 +94,12 @@ void Application::Run() {
     DisplayFPS(delta_time);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    glUseProgram(shader_program_);
     // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
     glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
 
-    glfwSwapBuffers(window_);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glfwPollEvents();
+    LoopCleanup();
   }
 }
 
@@ -116,6 +113,14 @@ void Application::DisplayFPS(double delta_time) {
   int fps = 1 / delta_time;
   const string title = "FPS: " + std::to_string(fps);
   glfwSetWindowTitle(window_, title.c_str());
+}
+
+void Application::LoopCleanup() {
+  glfwSwapBuffers(window_);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  glUseProgram(0);
+  glfwPollEvents();
 }
 
 Application::~Application() {
