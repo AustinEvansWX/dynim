@@ -1,8 +1,8 @@
 #define GL_GLEXT_PROTOTYPES
 
 #include "dynim.hpp"
+#include "Drawable.hpp"
 #include "VertexArray.hpp"
-#include "primitive.hpp"
 #include "shader.hpp"
 
 #include <GL/gl.h>
@@ -50,11 +50,8 @@ void Application::Run() {
       0,
       1,
   };
-
   unsigned int indices[] = {0, 1, 2};
-
   VertexArray vao(vertices, sizeof(vertices), indices, sizeof(indices) / sizeof(unsigned int));
-  // Quad triangle;
 
   glfwSwapInterval(1);
 
@@ -67,8 +64,6 @@ void Application::Run() {
 
     vao.Bind();
     glDrawElements(GL_TRIANGLES, vao.GetCount(), GL_UNSIGNED_INT, 0);
-
-    //    triangle.Draw();
 
     LoopCleanup();
   }

@@ -7,7 +7,16 @@
 
 namespace Dynim {
 
+VertexArray::VertexArray() {}
 VertexArray::VertexArray(const void *vertices, unsigned int size, const unsigned int *indices, unsigned int count) {
+  SetData(vertices, size, indices, count);
+}
+
+VertexArray::~VertexArray() {
+  glDeleteVertexArrays(1, &m_Id);
+}
+
+void VertexArray::SetData(const void *vertices, unsigned int size, const unsigned int *indices, unsigned int count) {
   m_Count = count;
 
   glGenVertexArrays(1, &m_Id);
@@ -29,10 +38,6 @@ VertexArray::VertexArray(const void *vertices, unsigned int size, const unsigned
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
-VertexArray::~VertexArray() {
-  glDeleteVertexArrays(1, &m_Id);
 }
 
 void VertexArray::Bind() const {
