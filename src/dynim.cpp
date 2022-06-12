@@ -1,6 +1,7 @@
 #define GL_GLEXT_PROTOTYPES
 
 #include "dynim.hpp"
+#include "primitive.hpp"
 #include "shader.hpp"
 
 #include <GL/gl.h>
@@ -32,72 +33,18 @@ void Application::ImportShader(string vertex_source_path, string fragment_source
 }
 
 void Application::Run() {
-  float triangle[] = {
-      0,
-      0.5,
-      0,
-      1,
-
-      -0.5,
-      -0.5,
-      0,
-      1,
-
-      0.5,
-      -0.5,
-      0,
-      1,
-  };
-
-  float quad[] = {
-      -0.5,
-      0.5,
-      0,
-      1,
-
-      -0.5,
-      -0.5,
-      0,
-      1,
-
-      0.5,
-      0.5,
-      0,
-      1,
-
-      0.5,
-      -0.5,
-      0,
-      1,
-  };
-
-  GLuint indices[] = {0, 1, 2, 2, 1, 3};
-
-  GLuint vertex_buffer;
-  glGenBuffers(1, &vertex_buffer);
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-  GLuint index_buffer;
-  glGenBuffers(1, &index_buffer);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  Quad triangle;
 
   glfwSwapInterval(1);
 
   while (!glfwWindowShouldClose(window_)) {
     double delta_time = GetDeltaTime();
-    DisplayFPS(delta_time);
+    DisplayFrameTime(delta_time);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(shader_program_);
-    // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-    glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
+
+    triangle.Draw();
 
     LoopCleanup();
   }
@@ -109,14 +56,14 @@ double Application::GetDeltaTime() {
   return now_ - last_;
 }
 
-void Application::DisplayFPS(double delta_time) {
-  int fps = 1 / delta_time;
-  const string title = "FPS: " + std::to_string(fps);
+void Application::DisplayFrameTime(double delta_time) {
+  const string title = "Frame Time: " + std::to_string(delta_time * 1000) + "ms";
   glfwSetWindowTitle(window_, title.c_str());
 }
 
 void Application::LoopCleanup() {
   glfwSwapBuffers(window_);
+  glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glUseProgram(0);

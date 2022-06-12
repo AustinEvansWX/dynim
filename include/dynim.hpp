@@ -23,7 +23,7 @@ private:
 
   double GetDeltaTime();
   void LoopCleanup();
-  void DisplayFPS(double delta_time);
+  void DisplayFrameTime(double delta_time);
 };
 
 } // namespace Dynim
