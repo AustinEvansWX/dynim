@@ -1,13 +1,15 @@
+#include "GameObject.hpp"
 #define GL_GLEXT_PROTOTYPES
 
-#include "dynim.hpp"
 #include "Drawable.hpp"
 #include "VertexArray.hpp"
+#include "dynim.hpp"
 #include "shader.hpp"
 
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <GLFW/glfw3.h>
+#include <glm/vec2.hpp>
 #include <iostream>
 #include <string>
 
@@ -35,11 +37,6 @@ void Application::ImportShader(string vertex_source_path, string fragment_source
 
 void Application::Run() {
   float vertices[] = {
-      0,
-      0.5,
-      0,
-      1,
-
       -0.5,
       -0.5,
       0,
@@ -47,13 +44,57 @@ void Application::Run() {
 
       0.5,
       -0.5,
+      0,
+      1,
+
+      0.5,
+      0.5,
+      0,
+      1,
+
+      -0.5,
+      0.5,
       0,
       1,
   };
-  unsigned int indices[] = {0, 1, 2};
+  unsigned int indices[] = {0, 1, 2, 2, 3, 0};
   VertexArray vao(vertices, sizeof(vertices), indices, sizeof(indices) / sizeof(unsigned int));
 
+  glm::vec2 pos(1, 1);
+  GameObject player(pos);
+
+  game_objects_.push_back(player);
+
   glfwSwapInterval(1);
+
+  glfwSetWindowUserPointer(window_, this);
+
+  glfwSetKeyCallback(window_, [](GLFWwindow *window, int key, int scancode, int action, int mod) {
+    Application *app = (Application *)glfwGetWindowUserPointer(window);
+    if (action == GLFW_PRESS) {
+      switch (key) {
+      case GLFW_KEY_ESCAPE:
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+        break;
+
+        //      case GLFW_KEY_W:
+        //        app->player_->m_Transform.y += 0.1f;
+        //        break;
+        //
+        //      case GLFW_KEY_A:
+        //        app->player_->m_Transform.x -= 0.1f;
+        //        break;
+        //
+        //      case GLFW_KEY_S:
+        //        app->player_->m_Transform.y -= 0.1f;
+        //        break;
+        //
+        //      case GLFW_KEY_D:
+        //        app->player_->m_Transform.x += 0.1f;
+        //        break;
+      }
+    }
+  });
 
   while (!glfwWindowShouldClose(window_)) {
     double delta_time = GetDeltaTime();
@@ -62,8 +103,15 @@ void Application::Run() {
 
     glUseProgram(shader_program_);
 
-    vao.Bind();
-    glDrawElements(GL_TRIANGLES, vao.GetCount(), GL_UNSIGNED_INT, 0);
+    for (auto &game_object : game_objects_) {
+      game_object.Update();
+
+      int loc = glGetUniformLocation(shader_program_, "transform");
+      glUniform2fv(loc, 1, &game_object.m_Transform[0]);
+
+      vao.Bind();
+      glDrawElements(GL_TRIANGLES, vao.GetCount(), GL_UNSIGNED_INT, 0);
+    }
 
     LoopCleanup();
   }
