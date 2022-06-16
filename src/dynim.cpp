@@ -1,7 +1,8 @@
+#include "Dynim/ECS/Components/Transform.hpp"
 #include "GameObject.hpp"
 #define GL_GLEXT_PROTOTYPES
 
-#include "Drawable.hpp"
+#include "Dynim/ECS/Components/Mesh.hpp"
 #include "VertexArray.hpp"
 #include "dynim.hpp"
 #include "shader.hpp"
@@ -9,7 +10,10 @@
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <iostream>
 #include <string>
 
@@ -24,121 +28,101 @@ namespace Dynim {
 void Application::Initialize(const int width, const int height) {
   glfwSetErrorCallback(error_callback);
   glfwInit();
-  window_ = glfwCreateWindow(width, height, "Dynim", NULL, NULL);
-  glfwMakeContextCurrent(window_);
-
+  m_Window = glfwCreateWindow(width, height, "Dynim", NULL, NULL);
+  glfwMakeContextCurrent(m_Window);
+  glfwSwapInterval(1);
+  glfwSetWindowUserPointer(m_Window, this);
   glViewport(0, 0, width, height);
   glClearColor(0, 0, 0, 1);
 }
 
 void Application::ImportShader(string vertex_source_path, string fragment_source_path) {
-  shader_program_ = CreateShaderProgram(vertex_source_path, fragment_source_path);
+  m_Shader_Program = CreateShaderProgram(vertex_source_path, fragment_source_path);
+}
+
+void Application::AddEntity(Entity *entity) {
+  m_Entities.push_back(entity);
 }
 
 void Application::Run() {
-  float vertices[] = {
-      -0.5,
-      -0.5,
-      0,
-      1,
-
-      0.5,
-      -0.5,
-      0,
-      1,
-
-      0.5,
-      0.5,
-      0,
-      1,
-
-      -0.5,
-      0.5,
-      0,
-      1,
-  };
-  unsigned int indices[] = {0, 1, 2, 2, 3, 0};
-  VertexArray vao(vertices, sizeof(vertices), indices, sizeof(indices) / sizeof(unsigned int));
-
-  glm::vec2 pos(1, 1);
-  GameObject player(pos);
-
-  game_objects_.push_back(player);
-
-  glfwSwapInterval(1);
-
-  glfwSetWindowUserPointer(window_, this);
-
-  glfwSetKeyCallback(window_, [](GLFWwindow *window, int key, int scancode, int action, int mod) {
-    Application *app = (Application *)glfwGetWindowUserPointer(window);
-    if (action == GLFW_PRESS) {
-      switch (key) {
-      case GLFW_KEY_ESCAPE:
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-        break;
-
-        //      case GLFW_KEY_W:
-        //        app->player_->m_Transform.y += 0.1f;
-        //        break;
-        //
-        //      case GLFW_KEY_A:
-        //        app->player_->m_Transform.x -= 0.1f;
-        //        break;
-        //
-        //      case GLFW_KEY_S:
-        //        app->player_->m_Transform.y -= 0.1f;
-        //        break;
-        //
-        //      case GLFW_KEY_D:
-        //        app->player_->m_Transform.x += 0.1f;
-        //        break;
-      }
+  for (auto &entity : m_Entities) {
+    for (auto &behaviour : entity->GetBehaviours()) {
+      behaviour->Start(this);
     }
+  }
+
+  glfwSetKeyCallback(m_Window, [](GLFWwindow *window, int key, int scancode, int action, int mod) {
+    Application *app = (Application *)glfwGetWindowUserPointer(window);
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+      app->Quit();
+    }
+    app->m_Keys[key] = action;
   });
 
-  while (!glfwWindowShouldClose(window_)) {
-    double delta_time = GetDeltaTime();
-    DisplayFrameTime(delta_time);
+  double last = 0;
+  double now = 0;
+
+  glm::mat4 projection = glm::ortho(-300.0f, 300.0f, -300.0f, 300.0f);
+
+  while (!glfwWindowShouldClose(m_Window)) {
+    last = now;
+    now = glfwGetTime();
+    double delta_time = now - last;
+    const string title = "Dynim | Frame Time: " + std::to_string(delta_time * 1000) + "ms";
+    glfwSetWindowTitle(m_Window, title.c_str());
+
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(shader_program_);
-
-    for (auto &game_object : game_objects_) {
-      game_object.Update();
-
-      int loc = glGetUniformLocation(shader_program_, "transform");
-      glUniform2fv(loc, 1, &game_object.m_Transform[0]);
-
-      vao.Bind();
-      glDrawElements(GL_TRIANGLES, vao.GetCount(), GL_UNSIGNED_INT, 0);
+    for (auto &entity : m_Entities) {
+      for (auto &behaviour : entity->GetBehaviours()) {
+        behaviour->Update(this, delta_time);
+      }
     }
 
-    LoopCleanup();
+    glUseProgram(m_Shader_Program);
+    int loc2 = glGetUniformLocation(m_Shader_Program, "mvp");
+
+    for (auto &entity : m_Entities) {
+      Mesh *mesh = entity->GetComponent<Mesh>();
+
+      if (mesh == nullptr)
+        continue;
+
+      glm::mat4 model = glm::mat4(1.0f);
+
+      Transform *transform = entity->GetComponent<Transform>();
+      if (transform != nullptr) {
+        glm::vec2 position = transform->GetPosition();
+        glm::vec2 scale = transform->GetScale();
+        model = glm::translate(model, glm::vec3(position, 0.0f));
+        model = glm::scale(model, glm::vec3(scale, 0.0f));
+      }
+
+      glm::mat4 mvp = projection * model;
+
+      glUniformMatrix4fv(loc2, 1, GL_FALSE, &mvp[0][0]);
+
+      mesh->Bind();
+      glDrawElements(GL_TRIANGLES, mesh->GetCount(), GL_UNSIGNED_INT, 0);
+    }
+
+    glfwSwapBuffers(m_Window);
+
+    glUseProgram(0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    glfwPollEvents();
   }
 }
 
-double Application::GetDeltaTime() {
-  last_ = now_;
-  now_ = glfwGetTime();
-  return now_ - last_;
-}
-
-void Application::DisplayFrameTime(double delta_time) {
-  const string title = "Frame Time: " + std::to_string(delta_time * 1000) + "ms";
-  glfwSetWindowTitle(window_, title.c_str());
-}
-
-void Application::LoopCleanup() {
-  glfwSwapBuffers(window_);
-  glBindVertexArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  glUseProgram(0);
-  glfwPollEvents();
+void Application::Quit() {
+  glfwSetWindowShouldClose(m_Window, GLFW_TRUE);
 }
 
 Application::~Application() {
-  glfwDestroyWindow(window_);
+  glfwDestroyWindow(m_Window);
   glfwTerminate();
 }
 

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "../src/GameObject.hpp"
+#include "Dynim/ECS/Entity.hpp"
 
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -13,23 +14,21 @@ namespace Dynim {
 
 class Application {
 public:
-  std::vector<GameObject> game_objects_;
+  std::vector<Entity *> m_Entities;
 
   void Initialize(const int width, const int height);
   void ImportShader(string vertex_source_path, string fragment_source_path);
+  void AddEntity(Entity *entity);
   void Run();
+  void Quit();
+  inline int GetInput(int key) { return m_Keys[key]; }
 
   ~Application();
 
 private:
-  GLFWwindow *window_ = NULL;
-  double now_ = 0;
-  double last_ = 0;
-  GLuint shader_program_ = 0;
-
-  double GetDeltaTime();
-  void LoopCleanup();
-  void DisplayFrameTime(double delta_time);
+  GLFWwindow *m_Window = NULL;
+  GLuint m_Shader_Program = 0;
+  std::map<int, int> m_Keys;
 };
 
 } // namespace Dynim
