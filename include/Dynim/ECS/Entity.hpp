@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Dynim/ECS/Behaviours/Behaviour.hpp"
+
 #include <typeindex>
 #include <unordered_map>
 #include <vector>

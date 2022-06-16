@@ -1,9 +1,7 @@
-#include "Dynim/ECS/Components/Transform.hpp"
-#include "GameObject.hpp"
 #define GL_GLEXT_PROTOTYPES
 
 #include "Dynim/ECS/Components/Mesh.hpp"
-#include "VertexArray.hpp"
+#include "Dynim/ECS/Components/Transform.hpp"
 #include "dynim.hpp"
 #include "shader.hpp"
 
@@ -45,19 +43,16 @@ void Application::AddEntity(Entity *entity) {
 }
 
 void Application::Run() {
-  for (auto &entity : m_Entities) {
-    for (auto &behaviour : entity->GetBehaviours()) {
-      behaviour->Start(this);
-    }
-  }
-
   glfwSetKeyCallback(m_Window, [](GLFWwindow *window, int key, int scancode, int action, int mod) {
     Application *app = (Application *)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-      app->Quit();
-    }
     app->m_Keys[key] = action;
   });
+
+  for (auto &entity : m_Entities) {
+    for (auto &behaviour : entity->GetBehaviours()) {
+      behaviour->Start(this, entity);
+    }
+  }
 
   double last = 0;
   double now = 0;
@@ -75,7 +70,7 @@ void Application::Run() {
 
     for (auto &entity : m_Entities) {
       for (auto &behaviour : entity->GetBehaviours()) {
-        behaviour->Update(this, delta_time);
+        behaviour->Update(this, entity, delta_time);
       }
     }
 
