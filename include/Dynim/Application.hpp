@@ -4,8 +4,8 @@
 
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
-#include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace std;
@@ -28,7 +28,7 @@ public:
 private:
   GLFWwindow *m_Window = NULL;
   GLuint m_Shader_Program = 0;
-  std::map<int, int> m_Keys;
+  std::unordered_map<int, int> m_Keys;
 };
 
 } // namespace Dynim
