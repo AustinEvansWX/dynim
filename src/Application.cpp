@@ -19,19 +19,25 @@ static void error_callback(int error, const char *description) {
   fprintf(stderr, "Error: %s\n", description);
 }
 
-using namespace std;
-
 namespace Dynim {
 
-void Application::Initialize(const int width, const int height) {
+Application::Application(std::string title, int width, int height) {
   glfwSetErrorCallback(error_callback);
   glfwInit();
-  m_Window = glfwCreateWindow(width, height, "Dynim", NULL, NULL);
+  m_Window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+  glfwSetWindowUserPointer(m_Window, this);
   glfwMakeContextCurrent(m_Window);
   glfwSwapInterval(1);
-  glfwSetWindowUserPointer(m_Window, this);
   glViewport(0, 0, width, height);
   glClearColor(0, 0, 0, 1);
+  glfwSetKeyCallback(m_Window, [](GLFWwindow *window, int key, int scancode, int action, int mod) {
+    Application *app = (Application *)glfwGetWindowUserPointer(window);
+    app->m_Keys[key] = action;
+  });
+}
+
+void Application::SetTitle(std::string title) {
+  glfwSetWindowTitle(m_Window, title.c_str());
 }
 
 void Application::ImportShader(string vertex_source_path, string fragment_source_path) {
@@ -43,36 +49,16 @@ void Application::AddEntity(Entity *entity) {
 }
 
 void Application::Run() {
-  glfwSetKeyCallback(m_Window, [](GLFWwindow *window, int key, int scancode, int action, int mod) {
-    Application *app = (Application *)glfwGetWindowUserPointer(window);
-    app->m_Keys[key] = action;
-  });
-
-  for (auto &entity : m_Entities) {
-    for (auto &behaviour : entity->GetBehaviours()) {
-      behaviour->Start(this, entity);
-    }
-  }
-
-  double last = 0;
-  double now = 0;
+  StartEntities();
 
   glm::mat4 projection = glm::ortho(-300.0f, 300.0f, -300.0f, 300.0f);
 
   while (!glfwWindowShouldClose(m_Window)) {
-    last = now;
-    now = glfwGetTime();
-    double delta_time = now - last;
-    const string title = "Dynim | Frame Time: " + std::to_string(delta_time * 1000) + "ms";
-    glfwSetWindowTitle(m_Window, title.c_str());
+    double delta_time = GetDeltaTime();
 
     glClear(GL_COLOR_BUFFER_BIT);
 
-    for (auto &entity : m_Entities) {
-      for (auto &behaviour : entity->GetBehaviours()) {
-        behaviour->Update(this, entity, delta_time);
-      }
-    }
+    UpdateEntities(delta_time);
 
     glUseProgram(m_Shader_Program);
     int loc2 = glGetUniformLocation(m_Shader_Program, "mvp");
@@ -87,10 +73,8 @@ void Application::Run() {
 
       Transform *transform = entity->GetComponent<Transform>();
       if (transform != nullptr) {
-        glm::vec2 position = transform->GetPosition();
-        glm::vec2 scale = transform->GetScale();
-        model = glm::translate(model, glm::vec3(position, 0.0f));
-        model = glm::scale(model, glm::vec3(scale, 0.0f));
+        model = glm::translate(model, glm::vec3(transform->GetPosition(), 0.0f));
+        model = glm::scale(model, glm::vec3(transform->GetScale(), 0.0f));
       }
 
       glm::mat4 mvp = projection * model;
@@ -101,15 +85,39 @@ void Application::Run() {
       glDrawElements(GL_TRIANGLES, mesh->GetCount(), GL_UNSIGNED_INT, 0);
     }
 
+    UnbindAll();
     glfwSwapBuffers(m_Window);
-
-    glUseProgram(0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
     glfwPollEvents();
   }
+}
+
+double Application::GetDeltaTime() {
+  m_Last = m_Now;
+  m_Now = glfwGetTime();
+  return m_Now - m_Last;
+}
+
+void Application::StartEntities() {
+  for (auto &entity : m_Entities) {
+    for (auto &behaviour : entity->GetBehaviours()) {
+      behaviour->Start(this, entity);
+    }
+  }
+}
+
+void Application::UpdateEntities(double delta_time) {
+  for (auto &entity : m_Entities) {
+    for (auto &behaviour : entity->GetBehaviours()) {
+      behaviour->Update(this, entity, delta_time);
+    }
+  }
+}
+
+void Application::UnbindAll() {
+  glUseProgram(0);
+  glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void Application::Quit() {

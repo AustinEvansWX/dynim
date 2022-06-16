@@ -12,8 +12,7 @@
 using namespace Dynim;
 
 int main() {
-  Application app = Application();
-  app.Initialize(600, 600);
+  Application app = Application("Basic Example", 600, 600);
   app.ImportShader("resources/vert.glsl", "resources/frag.glsl");
 
   float vertices[] = {
