@@ -1,5 +1,5 @@
 #include "GameController.hpp"
-#include "dynim.hpp"
+#include "Dynim/Application.hpp"
 
 #include <GLFW/glfw3.h>
 

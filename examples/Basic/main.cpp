@@ -1,10 +1,10 @@
+#include "Dynim/Application.hpp"
 #include "Dynim/ECS/Behaviours/Behaviour.hpp"
 #include "Dynim/ECS/Components/Mesh.hpp"
 #include "Dynim/ECS/Components/Transform.hpp"
 #include "Dynim/ECS/Entity.hpp"
 #include "Entites/GameController/Behaviours/GameController.hpp"
 #include "Entites/Player/Behaviours/PlayerMovement.hpp"
-#include "dynim.hpp"
 
 #include <glm/vec2.hpp>
 #include <iostream>

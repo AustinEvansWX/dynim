@@ -1,8 +1,8 @@
 #define GL_GLEXT_PROTOTYPES
 
+#include "Dynim/Application.hpp"
 #include "Dynim/ECS/Components/Mesh.hpp"
 #include "Dynim/ECS/Components/Transform.hpp"
-#include "dynim.hpp"
 #include "shader.hpp"
 
 #include <GL/gl.h>

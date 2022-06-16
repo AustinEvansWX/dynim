@@ -1,7 +1,7 @@
 #include "PlayerMovement.hpp"
+#include "Dynim/Application.hpp"
 #include "Dynim/ECS/Components/Transform.hpp"
 #include "Dynim/ECS/Entity.hpp"
-#include "dynim.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -11,7 +11,7 @@ void PlayerMovement::Update(void *app_ptr, void *entity_ptr, double delta_time) 
 
   Transform *transform = entity->GetComponent<Transform>();
 
-  m_Speed = app->GetInput(GLFW_KEY_LEFT_SHIFT) ? 60.0f : 30.0f;
+  m_Speed = app->GetInput(GLFW_KEY_LEFT_SHIFT) ? 100.0f : 50.0f;
 
   if (app->GetInput(GLFW_KEY_W) > 0) {
     transform->Move(glm::vec2(0, m_Speed * delta_time));
